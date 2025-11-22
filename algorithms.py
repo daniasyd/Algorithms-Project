@@ -8,9 +8,19 @@ import math
 #opponent's current strategy and compute your expected utility for each action.
 #This will be useful in implementing the learning dynamics
 def expectedValues(game,opponentStrategy):
-    "Your Code Here!"
+    num_my_actions = len(game)
+    num_opp_actions = len(game[0])
     
-    return [0.0]
+    result_list = []
+    
+    for i in range(num_my_actions):
+        expected = 0.0
+        for j in range(num_opp_actions):
+            expected += game[i][j] * opponentStrategy[j]
+            
+        result_list.append(expected)
+    
+    return result_list
 
 
 ############################## PROBLEM 2 ######################################
@@ -19,9 +29,13 @@ def expectedValues(game,opponentStrategy):
 #a player.  It takes that players's payoff matrix and the opponent's strategy
 #and returns a best response
 def bestResponseDynamics(game,opponentStrategy):
-    "Your Code Here!"
+    vals = expectedValues(game, opponentStrategy)
+    best_index = vals.index(max(vals))
+
+    strat_list = [0.0 for i in range(len(game))]
+    strat_list[best_index] = 1.0
     
-    return [0.0]
+    return strat_list
 
 ############################## PROBLEM 3 ######################################
 
@@ -38,9 +52,19 @@ class FictitiousPlay:
     #and self.history (a list to track your opponent's history)
     #You should return the updated strategy
     def updateStrategy(self, opponentStrategy):
-        "Your Code Here!"
+        for k in range(len(self.history)):
+            self.history[k] += opponentStrategy[k]
+            
+        total = sum(self.history)
+        avgOpp = [h / total for h in self.history]
         
-        return [0.0]
+        exp_vals = expectedValues(self.game, avgOpp)
+        best_index = exp_vals.index(max(exp_vals))
+        
+        strat_list = [0.0 for _ in range(len(self.game))]
+        strat_list[best_index] = 1.0
+        
+        return strat_list
 
 ############################## PROBLEM 4 ######################################
 
@@ -59,9 +83,20 @@ class SmoothedFictitiousPlay:
     #and self.gamma (see slides for what this does)
     #You should return the updated strategy
     def updateStrategy(self, opponentStrategy):
-        "Your Code Here!"
+        for k in range(len(self.history)):
+            self.history[k] += opponentStrategy[k]
+            
+        total = sum(self.history)
+        avgOpp = [h / total for h in self.history]
+
         
-        return [0.0]
+        exp_vals = expectedValues(self.game, avgOpp)
+        
+        scores = [math.exp(ev / self.gamma) for ev in exp_vals]
+        Z = sum(scores)
+        strat = [s / Z for s in scores]
+        
+        return strat
 
 ############################## PROBLEM 5 ######################################
 
@@ -76,9 +111,14 @@ class RegretMatching:
     #It should convert your current regret sums to a strategy
     #My implementation of updateStrategy calls it twice
     def regretSumsToStrategy(self):
-        "Your Code (Optionally) Here!"
+        positive_regrets = [max(r, 0.0) for r in self.regretSums]
+        total_positive = sum(positive_regrets)  
 
-        return [0.0]
+        if total_positive > 0.0:
+            return [r / total_positive for r in positive_regrets]
+        else:
+            num_actions = len(self.regretSums)
+            return [1.0 / num_actions for _ in range(num_actions)]
 
     #This should perform one iteration of regret matching
     #The argument is your opponent's more recent strategy
@@ -86,9 +126,18 @@ class RegretMatching:
     #and self.regretSums (a list to track your regret sums)
     #You should return the updated strategy
     def updateStrategy(self, opponentStrategy):
-        "Your Code Here!"
+        currentStrategy = self.regretSumsToStrategy()
+        evs = expectedValues(self.game, opponentStrategy)
         
-        return [0.0]
+        currentUtility = 0.0
+        for a in range(len(evs)):
+            currentUtility += currentStrategy[a] * evs[a]
+            
+        for a in range(len(evs)):
+            regret = evs[a] - currentUtility
+            self.regretSums[a] += regret
+            
+        return self.regretSumsToStrategy()
 
 ############################## PROBLEM 6 ######################################
 
